@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="style.css">
+	<title>Rubik's Sim</title>
+	<link rel="shortcut icon" type="image/x-icon" href="favicon.svg" />
+	<style>
+		body {
+			margin: 0;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="btn-container">
+		<div class="row">
+			<button id="left-cc" class="cc-buttons"> Left CCW </button>
+			<button id="face-cc" class="cc-buttons"> Face CCW </button>
+			<button id="right-cc" class="cc-buttons"> Right CCW </button>
+			<button id="back-cc" class="cc-buttons"> Back CCW </button>
+			<button id="top-cc" class="cc-buttons"> Up CCW </button>
+			<button id="bottom-cc" class="cc-buttons"> Down CCW </button>
+			<button id="middle-horizontal-cc" class="cc-buttons"> Middle Horizontal CCW </button>
+			<button id="middle-vertical-cc" class="cc-buttons"> Middle Vertical CCW </button>
+		</div>
+
+	</div>
+	<div class="btn-container">
+		<div class="row">
+			<button id="left-cw" class="cc-buttons"> Left CW </button>
+			<button id="face-cw" class="cc-buttons"> Face CW </button>
+			<button id="right-cw" class="cc-buttons"> Right CW </button>
+			<button id="back-cw" class="cc-buttons"> Back CW </button>
+			<button id="top-cw" class="cc-buttons"> Up CW </button>
+			<button id="bottom-cw" class="cc-buttons"> Down CW </button>
+			<button id="middle-horizontal-cw" class="cc-buttons"> Middle Horizontal CW </button>
+			<button id="middle-vertical-cw" class="cc-buttons"> Middle Vertical CW </button>
+		</div>
+	</div>
+	<script src="https://threejs.org/build/three.min.js"></script>
+	<script src="https://threejs.org/examples/js/loaders/OBJLoader.js"></script>
+	<script src="https://threejs.org/examples/js/loaders/MTLLoader.js"></script>
+	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+	<script>
+		// Let SPEED be a multiple of Math.PI for good approximate 90 degree rotations
+		const SPEED = Math.PI / 100;
+
+		var rotateLeftCC = false;
+		var rotateLeftCW = false;
+		var rotateRightCC = false;
+		var rotateRightCW = false;
+		var rotateFaceCC = false;
+		var rotateFaceCW = false;
+		var rotateBackCC = false;
+		var rotateBackCW = false;
+		var rotateUpCW = false;
+		var rotateUpCC = false;
+		var rotateDownCW = false;
+		var rotateDownCC = false;
+		var rotateDownCW = false;
+		var rotateMidHorzCC = false;
+		var rotateMidHorzCW = false;
+		var rotateMidVertCC = false;
+		var rotateMidVertCW = false;
+
+		// Set world axis for cube's components to move around
+		var worldXAxis = new THREE.Vector3(1, 0, 0);
+		var worldYAxis = new THREE.Vector3(0, 1, 0);
+		var worldZAxis = new THREE.Vector3(0, 0, 1);
+
+		class CubeComponent {
+			constructor(materialPath, objectPath, x, y, z) {
+				this.materialPath = materialPath;
+				this.objectPath = objectPath;
+				this.scene = scene;
+				this.x = x;
+				this.y = y;
+				this.z = z;
+
+				function setObject(object) {
+					this.obj = object;
+					this.obj.castShadow = true;
+					this.obj.receiveShadow = true;
+					this.rotationPosition = [0 - this.x, 0 - this.y, 0 - this.z];
+				}
+				setObject = setObject.bind(this); // Add the ability to use 'this' keyword
+
+				// Render the cube component
+				var mtlLoader = new THREE.MTLLoader();
+				mtlLoader.load(this.materialPath, function (materials) {
+					materials.preload();
+					var objLoader = new THREE.OBJLoader();
+					objLoader.setMaterials(materials);
+					objLoader.load(objectPath, function (object) {
+						scene.add(object);
+						object.position.x = x;
+						object.position.y = y;
+						object.position.z = z;
+						setObject(object);
+					});
+				});
+			}
+
+			XRotation(clockwise) {
+				this.obj.translateX(this.rotationPosition[0]);
+				this.obj.translateY(this.rotationPosition[1]);
+				this.obj.translateZ(this.rotationPosition[2]);
+				this.obj.rotateOnWorldAxis(worldXAxis, clockwise ? SPEED : -1 * SPEED);
+				this.obj.translateX(-1 * this.rotationPosition[0]);
+				this.obj.translateY(-1 * this.rotationPosition[1]);
+				this.obj.translateZ(-1 * this.rotationPosition[2]);
+			}
+
+			YRotation(clockwise) {
+				this.obj.translateX(this.rotationPosition[0]);
+				this.obj.translateY(this.rotationPosition[1]);
+				this.obj.translateZ(this.rotationPosition[2]);
+				this.obj.rotateOnWorldAxis(worldYAxis, clockwise ? SPEED : -1 * SPEED);
+				this.obj.translateX(-1 * this.rotationPosition[0]);
+				this.obj.translateY(-1 * this.rotationPosition[1]);
+				this.obj.translateZ(-1 * this.rotationPosition[2]);
+			}
+
+			ZRotation(clockwise) {
+				this.obj.translateX(this.rotationPosition[0]);
+				this.obj.translateY(this.rotationPosition[1]);
+				this.obj.translateZ(this.rotationPosition[2]);
+				this.obj.rotateOnWorldAxis(worldZAxis, clockwise ? SPEED : -1 * SPEED);
+				this.obj.translateX(-1 * this.rotationPosition[0]);
+				this.obj.translateY(-1 * this.rotationPosition[1]);
+				this.obj.translateZ(-1 * this.rotationPosition[2]);
+			}
+		}
+
+		// Create the Three.js Scene
+		var scene = new THREE.Scene();
+
+		// Centers
+		var base = new CubeComponent("./assets/base.mtl", "./assets/base.obj", 0, 0, 0);
+		var rCenter = new CubeComponent(
+			"./assets/rCenter.mtl",
+			"./assets/rCenter.obj",
+			-100,
+			0,
+			0
+		);
+		var oCenter = new CubeComponent(
+			"./assets/oCenter.mtl",
+			"./assets/oCenter.obj",
+			100,
+			0,
+			0
+		);
+		var gCenter = new CubeComponent(
+			"./assets/gCenter.mtl",
+			"./assets/gCenter.obj",
+			0,
+			0,
+			-100
+		);
+		var bCenter = new CubeComponent(
+			"./assets/bCenter.mtl",
+			"./assets/bCenter.obj",
+			0,
+			0,
+			100
+		);
+		var wCenter = new CubeComponent(
+			"./assets/wCenter.mtl",
+			"./assets/wCenter.obj",
+			0,
+			100,
+			0
+		);
+		var yCenter = new CubeComponent(
+			"./assets/yCenter.mtl",
+			"./assets/yCenter.obj",
+			0,
+			-100,
+			0
+		);
+
+		// Edges
+		var wrEdge = new CubeComponent(
+			"./assets/wrEdge.mtl",
+			"./assets/wrEdge.obj",
+			-100,
+			100,
+			0
+		);
+		var woEdge = new CubeComponent(
+			"./assets/woEdge.mtl",
+			"./assets/woEdge.obj",
+			100,
+			100,
+			0
+		);
+		var wgEdge = new CubeComponent(
+			"./assets/wgEdge.mtl",
+			"./assets/wgEdge.obj",
+			0,
+			100,
+			-100
+		);
+		var wbEdge = new CubeComponent(
+			"./assets/wbEdge.mtl",
+			"./assets/wbEdge.obj",
+			0,
+			100,
+			100
+		);
+		var yrEdge = new CubeComponent(
+			"./assets/yrEdge.mtl",
+			"./assets/yrEdge.obj",
+			-100,
+			-100,
+			0
+		);
+		var yoEdge = new CubeComponent(
+			"./assets/yoEdge.mtl",
+			"./assets/yoEdge.obj",
+			100,
+			-100,
+			0
+		);
+		var ygEdge = new CubeComponent(
+			"./assets/ygEdge.mtl",
+			"./assets/ygEdge.obj",
+			0,
+			-100,
+			-100
+		);
+		var ybEdge = new CubeComponent(
+			"./assets/ybEdge.mtl",
+			"./assets/ybEdge.obj",
+			0,
+			-100,
+			100
+		);
+		var rbEdge = new CubeComponent(
+			"./assets/rbEdge.mtl",
+			"./assets/rbEdge.obj",
+			-100,
+			0,
+			100
+		);
+		var rgEdge = new CubeComponent(
+			"./assets/rgEdge.mtl",
+			"./assets/rgEdge.obj",
+			-100,
+			0,
+			-100
+		);
+		var obEdge = new CubeComponent(
+			"./assets/obEdge.mtl",
+			"./assets/obEdge.obj",
+			100,
+			0,
+			100
+		);
+		var ogEdge = new CubeComponent(
+			"./assets/ogEdge.mtl",
+			"./assets/ogEdge.obj",
+			100,
+			0,
+			-100
+		);
+
+		// Corner pieces
+		var wrgCorner = new CubeComponent(
+			"./assets/wrgCorner.mtl",
+			"./assets/wrgCorner.obj",
+			-100,
+			100,
+			-100
+		);
+		var wrbCorner = new CubeComponent(
+			"./assets/wrbCorner.mtl",
+			"./assets/wrbCorner.obj",
+			-100,
+			100,
+			100
+		);
+		var wobCorner = new CubeComponent(
+			"./assets/wobCorner.mtl",
+			"./assets/wobCorner.obj",
+			100,
+			100,
+			100
+		);
+		var wogCorner = new CubeComponent(
+			"./assets/wogCorner.mtl",
+			"./assets/wogCorner.obj",
+			100,
+			100,
+			-100
+		);
+		var yrgCorner = new CubeComponent(
+			"./assets/yrgCorner.mtl",
+			"./assets/yrgCorner.obj",
+			-100,
+			-100,
+			-100
+		);
+		var yrbCorner = new CubeComponent(
+			"./assets/yrbCorner.mtl",
+			"./assets/yrbCorner.obj",
+			-100,
+			-100,
+			100
+		);
+		var yobCorner = new CubeComponent(
+			"./assets/yobCorner.mtl",
+			"./assets/yobCorner.obj",
+			100,
+			-100,
+			100
+		);
+		var yogCorner = new CubeComponent(
+			"./assets/yogCorner.mtl",
+			"./assets/yogCorner.obj",
+			100,
+			-100,
+			-100
+		);
+
+		// Create a new Perspective Camera
+		var camera = new THREE.PerspectiveCamera(
+			75,
+			window.innerWidth / window.innerHeight,
+			0.1,
+			1000
+		);
+		camera.position.z = 500;
+
+		// Create a Full Screen WebGL Renderer
+		var renderer = new THREE.WebGLRenderer({
+			antialias: true,
+			alpha: true
+		});
+		renderer.setClearColor("#DDDDDD");
+		renderer.setSize(window.innerWidth, window.innerHeight);
+
+		// Orbit Control Camera
+		var controls = new THREE.OrbitControls(camera, renderer.domElement);
+		controls.minDistance = 400;
+		controls.maxDistance = 800;
+		controls.enablePan = false;
+
+		document.body.appendChild(renderer.domElement);
+
+		// Make sure the project is responsive based on window resizing
+		window.addEventListener("resize", () => {
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+		});
+
+		// Add a light
+		const light = new THREE.AmbientLight(0xfffafc); // add light to all components
+		scene.add(light);
+
+
+		var cubePositions;
+
+		
+
+		function assignComponents() {
+			cubePositions = [
+				[
+					[wrgCorner, wgEdge, wogCorner], // Blue-top-top row
+					[wrEdge, wCenter, woEdge], // Blue-top-middle row
+					[wrbCorner, wbEdge, wobCorner], // Blue-top-bottom row
+				],
+				[
+					[rgEdge, gCenter, ogEdge], // Blue-top-center-top row
+					[rCenter, base, oCenter], // Blue-center-middle row
+					[rbEdge, bCenter, obEdge], // Blue-ce-bottom row
+				],
+				[
+					[yrgCorner, ygEdge, yogCorner], // Blue-bottom-top row
+					[yrEdge, yCenter, yoEdge], // Blue-bottom-middle row
+					[yrbCorner, ybEdge, yobCorner], // Blue-bottom-bottom row
+				],
+			];
+		}
+
+		// Give some time for components to render
+		setTimeout(() => {
+			assignComponents();
+		}, 2000);
+
+		function rotateLeft(clockwise) {
+			let frames = 0;
+			let animation = setInterval(function () {
+				if (++frames === 50) {
+					window.clearInterval(animation);
+				}
+				cubePositions[0][0][0].XRotation(clockwise);
+				cubePositions[0][2][0].XRotation(clockwise);
+				cubePositions[2][0][0].XRotation(clockwise);
+				cubePositions[2][2][0].XRotation(clockwise);
+				cubePositions[0][1][0].XRotation(clockwise);
+				cubePositions[1][2][0].XRotation(clockwise);
+				cubePositions[1][0][0].XRotation(clockwise);
+				cubePositions[2][1][0].XRotation(clockwise);
+				cubePositions[1][1][0].XRotation(clockwise);
+			}, 2);
+
+			setTimeout(() => {
+				// update cube's positions
+				var temp = [
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+				];
+				if (clockwise) {
+					temp[0][0][0] = cubePositions[2][0][0];
+					temp[0][1][0] = cubePositions[1][0][0];
+					temp[0][2][0] = cubePositions[0][0][0];
+
+					temp[1][0][0] = cubePositions[2][1][0];
+					temp[1][1][0] = cubePositions[1][1][0];
+					temp[1][2][0] = cubePositions[0][1][0];
+
+					temp[2][0][0] = cubePositions[2][2][0];
+					temp[2][1][0] = cubePositions[1][2][0];
+					temp[2][2][0] = cubePositions[0][2][0];
+				} else {
+					temp[0][0][0] = cubePositions[0][2][0];
+					temp[0][1][0] = cubePositions[1][2][0];
+					temp[0][2][0] = cubePositions[2][2][0];
+
+					temp[1][0][0] = cubePositions[0][1][0];
+					temp[1][1][0] = cubePositions[1][1][0];
+					temp[1][2][0] = cubePositions[2][1][0];
+
+					temp[2][0][0] = cubePositions[0][0][0];
+					temp[2][1][0] = cubePositions[1][0][0];
+					temp[2][2][0] = cubePositions[2][0][0];
+				}
+
+				// assign rest of components
+				for (var i = 0; i < 3; i++) {
+					for (var j = 0; j < 3; j++) {
+						for (var k = 0; k < 3; k++) {
+							if (k == 0) {
+								continue;
+							}
+							temp[i][j][k] = cubePositions[i][j][k];
+						}
+					}
+				}
+				cubePositions = temp;
+			}, 100);
+
+			rotateLeftCW = false;
+			rotateLeftCC = false;
+		}
+
+		function rotateRight(clockwise) {
+			let frames = 0;
+			let animation = setInterval(function () {
+				if (++frames === 50) {
+					window.clearInterval(animation);
+				}
+				cubePositions[0][0][2].XRotation(!clockwise);
+				cubePositions[0][1][2].XRotation(!clockwise);
+				cubePositions[0][2][2].XRotation(!clockwise);
+
+				cubePositions[1][0][2].XRotation(!clockwise);
+				cubePositions[1][1][2].XRotation(!clockwise);
+				cubePositions[1][2][2].XRotation(!clockwise);
+
+				cubePositions[2][0][2].XRotation(!clockwise);
+				cubePositions[2][1][2].XRotation(!clockwise);
+				cubePositions[2][2][2].XRotation(!clockwise);
+			}, 2);
+
+			// update cube's positions
+			setTimeout(() => {
+				var temp = [
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+				];
+				if (clockwise) {
+					temp[0][2][2] = cubePositions[2][2][2];
+					temp[0][1][2] = cubePositions[1][2][2];
+					temp[0][0][2] = cubePositions[0][2][2];
+
+					temp[1][2][2] = cubePositions[2][1][2];
+					temp[1][1][2] = cubePositions[1][1][2];
+					temp[1][0][2] = cubePositions[0][1][2];
+
+					temp[2][2][2] = cubePositions[2][0][2];
+					temp[2][1][2] = cubePositions[1][0][2];
+					temp[2][0][2] = cubePositions[0][0][2];
+				} else {
+					temp[0][2][2] = cubePositions[0][0][2];
+					temp[0][1][2] = cubePositions[1][0][2];
+					temp[0][0][2] = cubePositions[2][0][2];
+
+					temp[1][2][2] = cubePositions[0][1][2];
+					temp[1][1][2] = cubePositions[1][1][2];
+					temp[1][0][2] = cubePositions[2][1][2];
+
+					temp[2][2][2] = cubePositions[0][2][2];
+					temp[2][1][2] = cubePositions[1][2][2];
+					temp[2][0][2] = cubePositions[2][2][2];
+				}
+
+				for (var i = 0; i < 3; i++) {
+					for (var j = 0; j < 3; j++) {
+						for (var k = 0; k < 3; k++) {
+							if (k == 2) {
+								continue;
+							}
+							temp[i][j][k] = cubePositions[i][j][k];
+						}
+					}
+				}
+				cubePositions = temp;
+			}, 100);
+
+			rotateRightCW = false;
+			rotateRightCC = false;
+		}
+
+		function rotateFace(clockwise) {
+			let frames = 0;
+			let animation = setInterval(function () {
+				if (++frames === 50) {
+					window.clearInterval(animation);
+				}
+				cubePositions[0][2][0].ZRotation(!clockwise);
+				cubePositions[0][2][1].ZRotation(!clockwise);
+				cubePositions[0][2][2].ZRotation(!clockwise);
+
+				cubePositions[1][2][0].ZRotation(!clockwise);
+				cubePositions[1][2][1].ZRotation(!clockwise);
+				cubePositions[1][2][2].ZRotation(!clockwise);
+
+				cubePositions[2][2][0].ZRotation(!clockwise);
+				cubePositions[2][2][1].ZRotation(!clockwise);
+				cubePositions[2][2][2].ZRotation(!clockwise);
+			}, 2);
+
+			// update cube's positions
+			setTimeout(() => {
+				var temp = [
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+				];
+				if (clockwise) {
+					temp[0][2][0] = cubePositions[2][2][0];
+					temp[0][2][1] = cubePositions[1][2][0];
+					temp[0][2][2] = cubePositions[0][2][0];
+
+					temp[1][2][0] = cubePositions[2][2][1];
+					temp[1][2][1] = cubePositions[1][2][1];
+					temp[1][2][2] = cubePositions[0][2][1];
+
+					temp[2][2][0] = cubePositions[2][2][2];
+					temp[2][2][1] = cubePositions[1][2][2];
+					temp[2][2][2] = cubePositions[0][2][2];
+				} else {
+					temp[0][2][0] = cubePositions[0][2][2];
+					temp[0][2][1] = cubePositions[1][2][2];
+					temp[0][2][2] = cubePositions[2][2][2];
+
+					temp[1][2][0] = cubePositions[0][2][1];
+					temp[1][2][1] = cubePositions[1][2][1];
+					temp[1][2][2] = cubePositions[2][2][1];
+
+					temp[2][2][0] = cubePositions[0][2][0];
+					temp[2][2][1] = cubePositions[1][2][0];
+					temp[2][2][2] = cubePositions[2][2][0];
+				}
+
+				for (var i = 0; i < 3; i++) {
+					for (var j = 0; j < 3; j++) {
+						for (var k = 0; k < 3; k++) {
+							if (j == 2) {
+								continue;
+							}
+							temp[i][j][k] = cubePositions[i][j][k];
+						}
+					}
+				}
+				cubePositions = temp;
+			}, 100);
+
+			rotateFaceCW = false;
+			rotateFaceCC = false;
+		}
+
+		function rotateBack(clockwise) {
+			let frames = 0;
+			let animation = setInterval(function () {
+				if (++frames === 50) {
+					window.clearInterval(animation);
+				}
+				cubePositions[0][0][0].ZRotation(clockwise);
+				cubePositions[0][0][1].ZRotation(clockwise);
+				cubePositions[0][0][2].ZRotation(clockwise);
+
+				cubePositions[1][0][0].ZRotation(clockwise);
+				cubePositions[1][0][1].ZRotation(clockwise);
+				cubePositions[1][0][2].ZRotation(clockwise);
+
+				cubePositions[2][0][0].ZRotation(clockwise);
+				cubePositions[2][0][1].ZRotation(clockwise);
+				cubePositions[2][0][2].ZRotation(clockwise);
+			}, 2);
+
+			// update cube's positions
+			setTimeout(() => {
+				var temp = [
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+				];
+				if (clockwise) {
+					temp[0][0][0] = cubePositions[0][0][2];
+					temp[0][0][1] = cubePositions[1][0][2];
+					temp[0][0][2] = cubePositions[2][0][2];
+
+					temp[1][0][0] = cubePositions[0][0][1];
+					temp[1][0][1] = cubePositions[1][0][1];
+					temp[1][0][2] = cubePositions[2][0][1];
+
+					temp[2][0][0] = cubePositions[0][0][0];
+					temp[2][0][1] = cubePositions[1][0][0];
+					temp[2][0][2] = cubePositions[2][0][0];
+				} else {
+					temp[0][0][0] = cubePositions[2][0][0];
+					temp[0][0][1] = cubePositions[1][0][0];
+					temp[0][0][2] = cubePositions[0][0][0];
+
+					temp[1][0][0] = cubePositions[2][0][1];
+					temp[1][0][1] = cubePositions[1][0][1];
+					temp[1][0][2] = cubePositions[0][0][1];
+
+					temp[2][0][0] = cubePositions[2][0][2];
+					temp[2][0][1] = cubePositions[1][0][2];
+					temp[2][0][2] = cubePositions[0][0][2];
+				}
+
+				for (var i = 0; i < 3; i++) {
+					for (var j = 0; j < 3; j++) {
+						for (var k = 0; k < 3; k++) {
+							if (j == 0) {
+								continue;
+							}
+							temp[i][j][k] = cubePositions[i][j][k];
+						}
+					}
+				}
+				cubePositions = temp;
+			}, 100);
+
+			rotateBackCW = false;
+			rotateBackCC = false;
+		}
+
+		function rotateUp(clockwise) {
+			let frames = 0;
+			let animation = setInterval(function () {
+				if (++frames === 50) {
+					window.clearInterval(animation);
+				}
+				cubePositions[0][0][0].YRotation(!clockwise);
+				cubePositions[0][0][1].YRotation(!clockwise);
+				cubePositions[0][0][2].YRotation(!clockwise);
+
+				cubePositions[0][1][0].YRotation(!clockwise);
+				cubePositions[0][1][1].YRotation(!clockwise);
+				cubePositions[0][1][2].YRotation(!clockwise);
+
+				cubePositions[0][2][0].YRotation(!clockwise);
+				cubePositions[0][2][1].YRotation(!clockwise);
+				cubePositions[0][2][2].YRotation(!clockwise);
+			}, 2);
+
+			// update cube's positions
+			setTimeout(() => {
+				var temp = [
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+				];
+				if (clockwise) {
+					temp[0][0][0] = cubePositions[0][2][0];
+					temp[0][0][1] = cubePositions[0][1][0];
+					temp[0][0][2] = cubePositions[0][0][0];
+
+					temp[0][1][0] = cubePositions[0][2][1];
+					temp[0][1][1] = cubePositions[0][1][1];
+					temp[0][1][2] = cubePositions[0][0][1];
+
+					temp[0][2][0] = cubePositions[0][2][2];
+					temp[0][2][1] = cubePositions[0][1][2];
+					temp[0][2][2] = cubePositions[0][0][2];
+				} else {
+					temp[0][0][0] = cubePositions[0][0][2];
+					temp[0][0][1] = cubePositions[0][1][2];
+					temp[0][0][2] = cubePositions[0][2][2];
+
+					temp[0][1][0] = cubePositions[0][0][1];
+					temp[0][1][1] = cubePositions[0][1][1];
+					temp[0][1][2] = cubePositions[0][2][1];
+
+					temp[0][2][0] = cubePositions[0][0][0];
+					temp[0][2][1] = cubePositions[0][1][0];
+					temp[0][2][2] = cubePositions[0][2][0];
+				}
+
+				for (var i = 0; i < 3; i++) {
+					for (var j = 0; j < 3; j++) {
+						for (var k = 0; k < 3; k++) {
+							if (i == 0) {
+								continue;
+							}
+							temp[i][j][k] = cubePositions[i][j][k];
+						}
+					}
+				}
+				cubePositions = temp;
+			}, 100);
+
+			rotateUpCW = false;
+			rotateUpCC = false;
+		}
+
+		function rotateDown(clockwise) {
+			let frames = 0;
+			let animation = setInterval(function () {
+				if (++frames === 50) {
+					window.clearInterval(animation);
+				}
+				cubePositions[2][0][0].YRotation(clockwise);
+				cubePositions[2][0][1].YRotation(clockwise);
+				cubePositions[2][0][2].YRotation(clockwise);
+
+				cubePositions[2][1][0].YRotation(clockwise);
+				cubePositions[2][1][1].YRotation(clockwise);
+				cubePositions[2][1][2].YRotation(clockwise);
+
+				cubePositions[2][2][0].YRotation(clockwise);
+				cubePositions[2][2][1].YRotation(clockwise);
+				cubePositions[2][2][2].YRotation(clockwise);
+			}, 2);
+
+			// update cube's positions
+			setTimeout(() => {
+				var temp = [
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+				];
+				if (clockwise) {
+					temp[2][0][0] = cubePositions[2][0][2];
+					temp[2][0][1] = cubePositions[2][1][2];
+					temp[2][0][2] = cubePositions[2][2][2];
+
+					temp[2][1][0] = cubePositions[2][0][1];
+					temp[2][1][1] = cubePositions[2][1][1];
+					temp[2][1][2] = cubePositions[2][2][1];
+
+					temp[2][2][0] = cubePositions[2][0][0];
+					temp[2][2][1] = cubePositions[2][1][0];
+					temp[2][2][2] = cubePositions[2][2][0];
+				} else {
+					temp[2][0][0] = cubePositions[2][2][0];
+					temp[2][0][1] = cubePositions[2][1][0];
+					temp[2][0][2] = cubePositions[2][0][0];
+
+					temp[2][1][0] = cubePositions[2][2][1];
+					temp[2][1][1] = cubePositions[2][1][1];
+					temp[2][1][2] = cubePositions[2][0][1];
+
+					temp[2][2][0] = cubePositions[2][2][2];
+					temp[2][2][1] = cubePositions[2][1][2];
+					temp[2][2][2] = cubePositions[2][0][2];
+				}
+
+				for (var i = 0; i < 3; i++) {
+					for (var j = 0; j < 3; j++) {
+						for (var k = 0; k < 3; k++) {
+							if (i == 2) {
+								continue;
+							}
+							temp[i][j][k] = cubePositions[i][j][k];
+						}
+					}
+				}
+				cubePositions = temp;
+			}, 100);
+
+			rotateDownCW = false;
+			rotateDownCC = false;
+		}
+
+		function rotateMidVert(clockwise) {
+			let frames = 0;
+			let animation = setInterval(function () {
+				if (++frames === 50) {
+					window.clearInterval(animation);
+				}
+				cubePositions[0][0][1].XRotation(clockwise);
+				cubePositions[0][1][1].XRotation(clockwise);
+				cubePositions[0][2][1].XRotation(clockwise);
+
+				cubePositions[1][0][1].XRotation(clockwise);
+				cubePositions[1][1][1].XRotation(clockwise);
+				cubePositions[1][2][1].XRotation(clockwise);
+
+				cubePositions[2][0][1].XRotation(clockwise);
+				cubePositions[2][1][1].XRotation(clockwise);
+				cubePositions[2][2][1].XRotation(clockwise);
+			}, 2);
+
+			// update cube's positions
+			setTimeout(() => {
+				var temp = [
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+				];
+				if (clockwise) {
+					temp[0][0][1] = cubePositions[2][0][1];
+					temp[0][1][1] = cubePositions[1][0][1];
+					temp[0][2][1] = cubePositions[0][0][1];
+
+					temp[1][0][1] = cubePositions[2][1][1];
+					temp[1][1][1] = cubePositions[1][1][1];
+					temp[1][2][1] = cubePositions[0][1][1];
+
+					temp[2][0][1] = cubePositions[2][2][1];
+					temp[2][1][1] = cubePositions[1][2][1];
+					temp[2][2][1] = cubePositions[0][2][1];
+				} else {
+					temp[0][0][1] = cubePositions[0][2][1];
+					temp[0][1][1] = cubePositions[1][2][1];
+					temp[0][2][1] = cubePositions[2][2][1];
+
+					temp[1][0][1] = cubePositions[0][1][1];
+					temp[1][1][1] = cubePositions[1][1][1];
+					temp[1][2][1] = cubePositions[2][1][1];
+
+					temp[2][0][1] = cubePositions[0][0][1];
+					temp[2][1][1] = cubePositions[1][0][1];
+					temp[2][2][1] = cubePositions[2][0][1];
+				}
+
+				for (var i = 0; i < 3; i++) {
+					for (var j = 0; j < 3; j++) {
+						for (var k = 0; k < 3; k++) {
+							if (k == 1) {
+								continue;
+							}
+							temp[i][j][k] = cubePositions[i][j][k];
+						}
+					}
+				}
+				cubePositions = temp;
+			}, 100);
+
+			rotateMidVertCC = false;
+			rotateMidVertCW = false;
+		}
+
+		function rotateMidHorz(clockwise) {
+			let frames = 0;
+			let animation = setInterval(function () {
+				if (++frames === 50) {
+					window.clearInterval(animation);
+				}
+				cubePositions[1][0][0].YRotation(!clockwise);
+				cubePositions[1][0][1].YRotation(!clockwise);
+				cubePositions[1][0][2].YRotation(!clockwise);
+
+				cubePositions[1][1][0].YRotation(!clockwise);
+				cubePositions[1][1][1].YRotation(!clockwise);
+				cubePositions[1][1][2].YRotation(!clockwise);
+
+				cubePositions[1][2][0].YRotation(!clockwise);
+				cubePositions[1][2][1].YRotation(!clockwise);
+				cubePositions[1][2][2].YRotation(!clockwise);
+			}, 2);
+
+			// update cube's positions
+			setTimeout(() => {
+				var temp = [
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+					[
+						[0, 0, 0],
+						[0, 0, 0],
+						[0, 0, 0],
+					],
+				];
+				if (clockwise) {
+					temp[1][0][0] = cubePositions[1][2][0];
+					temp[1][0][1] = cubePositions[1][1][0];
+					temp[1][0][2] = cubePositions[1][0][0];
+
+					temp[1][1][0] = cubePositions[1][2][1];
+					temp[1][1][1] = cubePositions[1][1][1];
+					temp[1][1][2] = cubePositions[1][0][1];
+
+					temp[1][2][0] = cubePositions[1][2][2];
+					temp[1][2][1] = cubePositions[1][1][2];
+					temp[1][2][2] = cubePositions[1][0][2];
+				} else {
+					temp[1][0][0] = cubePositions[1][0][2];
+					temp[1][0][1] = cubePositions[1][1][2];
+					temp[1][0][2] = cubePositions[1][2][2];
+
+					temp[1][1][0] = cubePositions[1][0][1];
+					temp[1][1][1] = cubePositions[1][1][1];
+					temp[1][1][2] = cubePositions[1][2][1];
+
+					temp[1][2][0] = cubePositions[1][0][0];
+					temp[1][2][1] = cubePositions[1][1][0];
+					temp[1][2][2] = cubePositions[1][2][0];
+				}
+
+				for (var i = 0; i < 3; i++) {
+					for (var j = 0; j < 3; j++) {
+						for (var k = 0; k < 3; k++) {
+							if (i == 1) {
+								continue;
+							}
+							temp[i][j][k] = cubePositions[i][j][k];
+						}
+					}
+				}
+				cubePositions = temp;
+			}, 100);
+
+			rotateMidHorzCC = false;
+			rotateMidHorzCW = false;
+		}
+
+		// render objects
+		var render = function () {
+			requestAnimationFrame(render);
+
+			if (rotateLeftCW) {
+				rotateLeft(true);
+			}
+			if (rotateLeftCC) {
+				rotateLeft(false);
+			}
+			if (rotateFaceCC) {
+				rotateFace(false);
+			}
+			if (rotateFaceCW) {
+				rotateFace(true);
+			}
+			if (rotateBackCC) {
+				rotateBack(false);
+			}
+			if (rotateBackCW) {
+				rotateBack(true);
+			}
+			if (rotateRightCC) {
+				rotateRight(false);
+			}
+			if (rotateRightCW) {
+				rotateRight(true)
+			}
+			if (rotateUpCC) {
+				rotateUp(false);
+			}
+			if (rotateUpCW) {
+				rotateUp(true)
+			}
+			if (rotateDownCC) {
+				rotateDown(false);
+			}
+			if (rotateDownCW) {
+				rotateDown(true)
+			}
+			if (rotateMidVertCC) {
+				rotateMidVert(false);
+			}
+			if (rotateMidVertCW) {
+				rotateMidVert(true)
+			}
+			if (rotateMidHorzCC) {
+				rotateMidHorz(false);
+			}
+			if (rotateMidHorzCW) {
+				rotateMidHorz(true)
+			}
+
+			renderer.render(scene, camera);
+		};
+
+
+		function disableButtons(excludeButtons) {
+			let buttons = document.getElementsByClassName("cc-buttons");
+			for (var i = 0; i < buttons.length; i++) {
+				if (buttons[i].id.includes(excludeButtons)) {
+					continue;
+				}
+				buttons[i].disabled = true;
+			}
+
+			setTimeout(() => {
+				for (var i = 0; i < buttons.length; i++) {
+					buttons[i].disabled = false;
+				}
+			}, 1000);
+		}
+
+		document.getElementById("left-cw").addEventListener("click", () => {
+			rotateLeftCW = true;
+			disableButtons("left");
+		});
+		document.getElementById("left-cc").addEventListener("click", () => {
+			rotateLeftCC = true;
+			disableButtons("left");
+		});
+		document.getElementById("face-cw").addEventListener("click", () => {
+			rotateFaceCW = true;
+			disableButtons("face");
+		});
+		document.getElementById("face-cc").addEventListener("click", () => {
+			rotateFaceCC = true;
+			disableButtons("face");
+		});
+		document.getElementById("back-cw").addEventListener("click", () => {
+			rotateBackCW = true;
+			disableButtons("back");
+		});
+		document.getElementById("back-cc").addEventListener("click", () => {
+			rotateBackCC = true;
+			disableButtons("back");
+		});
+		document.getElementById("right-cw").addEventListener("click", () => {
+			rotateRightCW = true;
+			disableButtons("right");
+		});
+		document.getElementById("right-cc").addEventListener("click", () => {
+			rotateRightCC = true;
+			disableButtons("right");
+		});
+		document.getElementById("top-cw").addEventListener("click", () => {
+			rotateUpCW = true;
+			disableButtons("top");
+		});
+		document.getElementById("top-cc").addEventListener("click", () => {
+			rotateUpCC = true;
+			disableButtons("top");
+		});
+		document.getElementById("bottom-cc").addEventListener("click", () => {
+			rotateDownCC = true;
+			disableButtons("bottom");
+		});
+		document.getElementById("bottom-cw").addEventListener("click", () => {
+			rotateDownCW = true;
+			disableButtons("bottom");
+		});
+		document.getElementById("middle-horizontal-cc").addEventListener("click", () => {
+			rotateMidHorzCC = true;
+			disableButtons("middle-horizontal");
+		});
+		document.getElementById("middle-horizontal-cw").addEventListener("click", () => {
+			rotateMidHorzCW = true;
+			disableButtons("middle-horizontal");
+		});
+		document.getElementById("middle-vertical-cc").addEventListener("click", () => {
+			rotateMidVertCC = true;
+			disableButtons("middle-vertical");
+		});
+		document.getElementById("middle-vertical-cw").addEventListener("click", () => {
+			rotateMidVertCW = true;
+			disableButtons("middle-vertical");
+		});
+		document.getElementById("middle-horizontal-cc").addEventListener("click", () => {
+			rotateMidHorzCC = true;
+			disableButtons("middle-horizontal");
+		});
+		document.getElementById("middle-horizontal-cw").addEventListener("click", () => {
+			rotateMidHorzCW = true;
+			disableButtons("middle-horizontal");
+		});
+
+		// Render the scene
+		render();
+	</script>
+	
+</body>
+
+</html>

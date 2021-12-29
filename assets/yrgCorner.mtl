@@ -1,0 +1,12 @@
+newmtl Organic Shapes Pink Noise_2d5d8e05-1fed-4c16-b070-3a4649fc42e0
+Kd 0.192 0.180 0.200
+d 1.000
+newmtl Dirty Plastic_e4e454ce-2267-4f05-8a64-b406cc072b74
+Kd 0.710 0.184 0.184
+d 1.000
+newmtl Orange to Yellow_f769d9ee-b8b0-4ca6-adc6-028d203f8d1f
+Kd 1.000 1.000 0.000
+d 1.000
+newmtl Green to Yellow_27b97537-f696-4444-a90a-56c422ff1aec
+Kd 0.000 1.000 0.118
+d 1.000
